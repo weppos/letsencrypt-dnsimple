@@ -7,16 +7,19 @@ This is a super-simple [Go](https://golang.org/) script to request an SSL certif
 **DNSimple environment variables**
 
 ```shell
-export DNSIMPLE_EMAIL="example@example.com"
+export DNSIMPLE_EMAIL="dnsimple@example.com"
 export DNSIMPLE_API_TOKEN="1234567890"
-$ go run main.go domain1,domain2,domainN
+$ go run main.go \
+        --email example@example.com
+        domain1,domain2,domainN
 ```
 
 **Explicit DNSimple parameters**
 
 ```shell
 $ go run main.go \
-        --user "example@example.com" \
+        --email example@example.com
+        --user "dnsimple@example.com" \
         --api-key "1234567890" \
          domain1,domain2,domainN
 ```
@@ -25,7 +28,8 @@ $ go run main.go \
 
 ```shell
 $ go run main.go \
-        --user "example@example.com" \
+        --email example@example.com
+        --user "dnsimple@example.com" \
         --api-key "1234567890" \
         simonecarletti.com,www.simonecarletti.com
 ```

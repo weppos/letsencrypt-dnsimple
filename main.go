@@ -43,19 +43,24 @@ var (
 	dnsimpleEmail string
 	dnsimpleApiKey string
 	acmeUrl string
+	email string
 )
 
 func init() {
 	flag.StringVar(&dnsimpleEmail, "user", "", "The DNSimple user email")
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "The DNSimple API key")
-	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The DNSimple API key")
-	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The DNSimple API key")
+	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The CA URL")
+	flag.StringVar(&email, "email", "", "The contact email to use for registration")
 	flag.Parse()
 }
 
 func main() {
 	if len(flag.Args()) != 1 {
 		flag.Usage()
+		os.Exit(2)
+	}
+	if email == "" {
+		fmt.Println("--email is required")
 		os.Exit(2)
 	}
 
@@ -67,8 +72,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	email = fmt.Sprintf(email, now)
 	User := User{
-		Email: fmt.Sprintf("weppos+lego-%v@gmail.com", now),
+		Email: email,
 		key:   privateKey,
 	}
 
