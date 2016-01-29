@@ -46,8 +46,9 @@ var (
 )
 
 func init() {
-	flag.StringVar(&dnsimpleEmail, "email", "", "The DNSimple email")
+	flag.StringVar(&dnsimpleEmail, "user", "", "The DNSimple user email")
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "The DNSimple API key")
+	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The DNSimple API key")
 	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The DNSimple API key")
 	flag.Parse()
 }

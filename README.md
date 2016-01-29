@@ -16,7 +16,7 @@ $ go run main.go domain1,domain2,domainN
 
 ```shell
 $ go run main.go \
-        --email "example@example.com" \
+        --user "example@example.com" \
         --api-key "1234567890" \
          domain1,domain2,domainN
 ```
@@ -25,7 +25,7 @@ $ go run main.go \
 
 ```shell
 $ go run main.go \
-        --email "example@example.com" \
+        --user "example@example.com" \
         --api-key "1234567890" \
         simonecarletti.com,www.simonecarletti.com
 ```
