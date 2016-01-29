@@ -53,10 +53,6 @@ func init() {
 }
 
 func main() {
-	fmt.Println(dnsimpleEmail)
-	fmt.Println(dnsimpleApiKey)
-	fmt.Println(flag.Args())
-
 	if len(flag.Args()) != 1 {
 		flag.Usage()
 		os.Exit(2)
