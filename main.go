@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -36,30 +38,35 @@ func (u User) GetPrivateKey() *rsa.PrivateKey {
 	return u.key
 }
 
-func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: %s domain1,domain2,domainN", os.Args[0])
-	flag.PrintDefaults()
-}
-
 var (
 	dnsimpleEmail  string
 	dnsimpleApiKey string
 	acmeUrl        string
 	email          string
-	path           string
+	dataPath       string
 )
+
+func usage() {
+	bin := path.Base(os.Args[0])
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", bin)
+	fmt.Fprintf(os.Stderr, "\t%s [flags] domain\n", bin)
+	fmt.Fprintf(os.Stderr, "\t%s [flags] domain1,domainN\n", bin)
+	fmt.Fprintf(os.Stderr, "Flags:\n")
+	flag.PrintDefaults()
+}
 
 func init() {
 	flag.StringVar(&dnsimpleEmail, "user", "", "DNSimple user email")
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "DNSimple API key")
 	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The CA URL")
 	flag.StringVar(&email, "email", "", "Email used for registration and recovery contact")
-	flag.StringVar(&path, "path", ".data", "Directory to use for storing the data")
+	flag.StringVar(&dataPath, "path", ".data", "Directory to use for storing the data")
+	flag.Usage = usage
 	flag.Parse()
 }
 
 func main() {
-	if len(flag.Args()) != 1 {
+	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -68,21 +75,23 @@ func main() {
 		os.Exit(2)
 	}
 
-	domains := strings.Split(flag.Args()[0], ",")
 	now := time.Now().Unix()
+	domains := strings.Split(flag.Args()[0], ",")
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	email = fmt.Sprintf(email, now)
+	if r, _ := regexp.Compile("%v"); r.MatchString(email) {
+		email = fmt.Sprintf(email, now)
+	}
 	user := User{
 		Email: email,
 		key:   privateKey,
 	}
 
-	usersPath := fmt.Sprintf("%v/users/%v", path, user.GetEmail())
+	usersPath := fmt.Sprintf("%v/users/%v", dataPath, user.GetEmail())
 	log.Println(usersPath)
 
 	fileWrite(usersPath, "privkey.pem", pemEncode(user.GetPrivateKey()))
@@ -133,11 +142,14 @@ func main() {
 		log.Fatal(failures)
 	}
 
+	// log: certificate
+	log.Println(fmt.Printf("[INFO][%s] Certificate %s", certificates.CertURL, strings.Join(domains, ", ")))
+
 	// Each certificate comes back with the cert bytes, the bytes of the client's
 	// private key, and a certificate URL. This is where you should save them to files!
 	//fmt.Printf("%#v\n", certificates)
 
-	certsPath := fmt.Sprintf("%v/certs/%v", path, now)
+	certsPath := fmt.Sprintf("%v/certs/%v", dataPath, now)
 	log.Println(certsPath)
 	fileWrite(certsPath, "privkey.pem", certificates.PrivateKey)
 	fileWrite(certsPath, "fullchain.pem", certificates.Certificate)
