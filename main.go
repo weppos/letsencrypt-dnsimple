@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -52,7 +54,7 @@ func init() {
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "DNSimple API key")
 	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The CA URL")
 	flag.StringVar(&email, "email", "", "Email used for registration and recovery contact")
-	flag.StringVar(&path, "path", ".certs", "Directory to use for storing the data")
+	flag.StringVar(&path, "path", ".data", "Directory to use for storing the data")
 	flag.Parse()
 }
 
@@ -75,16 +77,22 @@ func main() {
 	}
 
 	email = fmt.Sprintf(email, now)
-	User := User{
+	user := User{
 		Email: email,
 		key:   privateKey,
 	}
 
+	usersPath := fmt.Sprintf("%v/users/%v", path, user.GetEmail())
+	log.Println(usersPath)
+
+	fileWrite(usersPath, "privkey.pem", pemEncode(user.GetPrivateKey()))
+	fileWrite(usersPath, "pubkey.pem", pemEncode(user.GetPrivateKey().Public()))
+
 	// log: user
-	log.Println(User)
+	log.Println(user)
 
 	// A client facilitates communication with the CA server.
-	client, err := acme.NewClient(strings.Join([]string{acmeUrl, "directory"}, "/"), &User, rsaKeySize)
+	client, err := acme.NewClient(strings.Join([]string{acmeUrl, "directory"}, "/"), &user, rsaKeySize)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,7 +114,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	User.Registration = reg
+	user.Registration = reg
 
 	// log: registration
 	log.Println(reg)
@@ -129,12 +137,12 @@ func main() {
 	// private key, and a certificate URL. This is where you should save them to files!
 	//fmt.Printf("%#v\n", certificates)
 
-	certsPath := fmt.Sprintf("%v/%v", path, now)
+	certsPath := fmt.Sprintf("%v/certs/%v", path, now)
+	log.Println(certsPath)
 	fileWrite(certsPath, "privkey.pem", certificates.PrivateKey)
 	fileWrite(certsPath, "fullchain.pem", certificates.Certificate)
 
 	log.Println("completed!")
-	log.Println(certsPath)
 }
 
 func mkPath(path string) {
@@ -150,4 +158,19 @@ func fileWrite(path, filename string, data []byte) {
 	if err := ioutil.WriteFile(filepath, data, 0644); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func pemEncode(data interface{}) []byte {
+	var pemBlock *pem.Block
+	switch key := data.(type) {
+	case *rsa.PrivateKey:
+		pemBlock = &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}
+		break
+	case *rsa.PublicKey:
+		bytes, _ := x509.MarshalPKIXPublicKey(key)
+		pemBlock = &pem.Block{Type: "RSA PUBLIC KEY", Bytes: bytes}
+		break
+	}
+
+	return pem.EncodeToMemory(pemBlock)
 }
