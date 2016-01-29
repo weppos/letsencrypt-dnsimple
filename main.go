@@ -42,13 +42,13 @@ func usage() {
 var (
 	dnsimpleEmail string
 	dnsimpleApiKey string
-	caUrl string
+	acmeUrl string
 )
 
 func init() {
 	flag.StringVar(&dnsimpleEmail, "email", "", "The DNSimple email")
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "The DNSimple API key")
-	flag.StringVar(&caUrl, "url", "https://acme-staging.api.letsencrypt.org/directory", "The DNSimple API key")
+	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The DNSimple API key")
 	flag.Parse()
 }
 
@@ -75,7 +75,7 @@ func main() {
 	log.Println(User)
 
 	// A client facilitates communication with the CA server.
-	client, err := acme.NewClient(caUrl, &User, rsaKeySize)
+	client, err := acme.NewClient(strings.Join([]string{acmeUrl, "directory"}, "/"), &User, rsaKeySize)
 	if err != nil {
 		log.Fatal(err)
 	}
