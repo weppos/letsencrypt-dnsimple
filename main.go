@@ -9,9 +9,13 @@ import (
 	"strings"
 	"time"
 	"io/ioutil"
+	"flag"
 
 	"github.com/xenolf/lego/acme"
 )
+
+// Create a user. New accounts need an email and private key to start.
+const rsaKeySize = 2048
 
 // You'll need a user or account type that implements acme.User
 type User struct {
@@ -30,14 +34,33 @@ func (u User) GetPrivateKey() *rsa.PrivateKey {
 	return u.key
 }
 
-// Create a user. New accounts need an email and private key to start.
-const rsaKeySize = 2048
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage: %s domain1,domain2,domainN", os.Args[0])
+	flag.PrintDefaults()
+}
+
+var (
+	dnsimpleEmail string
+	dnsimpleApiKey string
+)
+
+func init() {
+	flag.StringVar(&dnsimpleEmail, "email", "", "The DNSimple email")
+	flag.StringVar(&dnsimpleApiKey, "api-key", "", "The DNSimple API key")
+	flag.Parse()
+}
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatal("Missing args")
+	fmt.Println(dnsimpleEmail)
+	fmt.Println(dnsimpleApiKey)
+	fmt.Println(flag.Args())
+
+	if len(flag.Args()) != 1 {
+		flag.Usage()
+		os.Exit(2)
 	}
-	domains := strings.Split(os.Args[1], ",")
+
+	domains := strings.Split(flag.Args()[0], ",")
 	now := time.Now().Unix()
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
@@ -60,7 +83,7 @@ func main() {
 	}
 
 	// Force to use DNSimple
-	provider, err := acme.NewDNSProviderDNSimple("", "")
+	provider, err := acme.NewDNSProviderDNSimple(dnsimpleEmail, dnsimpleApiKey)
 	if err != nil {
 		log.Fatal(err)
 	}
