@@ -14,19 +14,19 @@ import (
 )
 
 // You'll need a user or account type that implements acme.User
-type MyUser struct {
+type User struct {
 	Email        string
 	Registration *acme.RegistrationResource
 	key          *rsa.PrivateKey
 }
 
-func (u MyUser) GetEmail() string {
+func (u User) GetEmail() string {
 	return u.Email
 }
-func (u MyUser) GetRegistration() *acme.RegistrationResource {
+func (u User) GetRegistration() *acme.RegistrationResource {
 	return u.Registration
 }
-func (u MyUser) GetPrivateKey() *rsa.PrivateKey {
+func (u User) GetPrivateKey() *rsa.PrivateKey {
 	return u.key
 }
 
@@ -45,16 +45,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	myUser := MyUser{
+	User := User{
 		Email: fmt.Sprintf("weppos+lego-%v@gmail.com", now),
 		key:   privateKey,
 	}
 
 	// log: user
-	log.Println(myUser)
+	log.Println(User)
 
 	// A client facilitates communication with the CA server.
-	client, err := acme.NewClient("https://acme-staging.api.letsencrypt.org/directory", &myUser, rsaKeySize)
+	client, err := acme.NewClient("https://acme-staging.api.letsencrypt.org/directory", &User, rsaKeySize)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	myUser.Registration = reg
+	User.Registration = reg
 
 	// log: registration
 	log.Println(reg)
