@@ -3,13 +3,13 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"time"
-	"io/ioutil"
-	"flag"
 
 	"github.com/xenolf/lego/acme"
 )
@@ -40,10 +40,11 @@ func usage() {
 }
 
 var (
-	dnsimpleEmail string
+	dnsimpleEmail  string
 	dnsimpleApiKey string
-	acmeUrl string
-	email string
+	acmeUrl        string
+	email          string
+	path           string
 )
 
 func init() {
@@ -51,6 +52,7 @@ func init() {
 	flag.StringVar(&dnsimpleApiKey, "api-key", "", "DNSimple API key")
 	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The CA URL")
 	flag.StringVar(&email, "email", "", "Email used for registration and recovery contact")
+	flag.StringVar(&path, "path", ".certs", "Directory to use for storing the data")
 	flag.Parse()
 }
 
@@ -123,29 +125,31 @@ func main() {
 		log.Fatal(failures)
 	}
 
-
 	// Each certificate comes back with the cert bytes, the bytes of the client's
 	// private key, and a certificate URL. This is where you should save them to files!
 	//fmt.Printf("%#v\n", certificates)
 
-	certsPath := fmt.Sprintf(".certs/%v", now)
-	err = os.MkdirAll(certsPath, 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
+	certsPath := fmt.Sprintf("%v/%v", now)
+	mkPath(certsPath)
 
 	keyFile := fmt.Sprintf("%v/privkey.pem", certsPath)
-	err = ioutil.WriteFile(keyFile, certificates.PrivateKey, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fileWrite(keyFile, certificates.PrivateKey)
 
 	certFile := fmt.Sprintf("%v/fullchain.pem", certsPath)
-	err = ioutil.WriteFile(certFile, certificates.Certificate, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fileWrite(certFile, certificates.Certificate)
 
 	log.Println("completed!")
 	log.Println(certsPath)
+}
+
+func mkPath(path string) {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func fileWrite(filename string, data []byte) {
+	if err := ioutil.WriteFile(filename, data, 0644); err != nil {
+		log.Fatal(err)
+	}
 }
