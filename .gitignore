@@ -1,2 +1,4 @@
 .certs
 
+// ignore the binary
+letsencrypt-dnsimple
