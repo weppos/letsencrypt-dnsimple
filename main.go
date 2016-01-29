@@ -129,14 +129,9 @@ func main() {
 	// private key, and a certificate URL. This is where you should save them to files!
 	//fmt.Printf("%#v\n", certificates)
 
-	certsPath := fmt.Sprintf("%v/%v", now)
-	mkPath(certsPath)
-
-	keyFile := fmt.Sprintf("%v/privkey.pem", certsPath)
-	fileWrite(keyFile, certificates.PrivateKey)
-
-	certFile := fmt.Sprintf("%v/fullchain.pem", certsPath)
-	fileWrite(certFile, certificates.Certificate)
+	certsPath := fmt.Sprintf("%v/%v", path, now)
+	fileWrite(certsPath, "privkey.pem", certificates.PrivateKey)
+	fileWrite(certsPath, "fullchain.pem", certificates.Certificate)
 
 	log.Println("completed!")
 	log.Println(certsPath)
@@ -148,8 +143,11 @@ func mkPath(path string) {
 	}
 }
 
-func fileWrite(filename string, data []byte) {
-	if err := ioutil.WriteFile(filename, data, 0644); err != nil {
+func fileWrite(path, filename string, data []byte) {
+	filepath := fmt.Sprintf("%s/%s", path, filename)
+	mkPath(path)
+
+	if err := ioutil.WriteFile(filepath, data, 0644); err != nil {
 		log.Fatal(err)
 	}
 }
