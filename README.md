@@ -33,3 +33,7 @@ $ go run main.go \
         --api-key "1234567890" \
         simonecarletti.com,www.simonecarletti.com
 ```
+
+## TODO
+
+- Load credentials from .data when the email matches
