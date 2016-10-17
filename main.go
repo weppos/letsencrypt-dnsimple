@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/xenolf/lego/acme"
+	"github.com/xenolf/lego/providers/dns/dnsimple"
 )
 
 // Create a user. New accounts need an email and private key to start.
@@ -25,7 +27,7 @@ const rsaKeySize = 2048
 type User struct {
 	Email        string
 	Registration *acme.RegistrationResource
-	key          *rsa.PrivateKey
+	key          crypto.PrivateKey
 }
 
 func (u User) GetEmail() string {
@@ -34,7 +36,7 @@ func (u User) GetEmail() string {
 func (u User) GetRegistration() *acme.RegistrationResource {
 	return u.Registration
 }
-func (u User) GetPrivateKey() *rsa.PrivateKey {
+func (u User) GetPrivateKey() crypto.PrivateKey {
 	return u.key
 }
 
@@ -94,20 +96,20 @@ func main() {
 	usersPath := fmt.Sprintf("%v/users/%v", dataPath, user.GetEmail())
 	log.Println(usersPath)
 
-	fileWrite(usersPath, "privkey.pem", pemEncode(user.GetPrivateKey()))
-	fileWrite(usersPath, "pubkey.pem", pemEncode(user.GetPrivateKey().Public()))
+	fileWrite(usersPath, "privkey.pem", pemEncode(privateKey))
+	fileWrite(usersPath, "pubkey.pem", pemEncode(privateKey.Public()))
 
 	// log: user
 	log.Println(user)
 
 	// A client facilitates communication with the CA server.
-	client, err := acme.NewClient(strings.Join([]string{acmeUrl, "directory"}, "/"), &user, rsaKeySize)
+	client, err := acme.NewClient(strings.Join([]string{acmeUrl, "directory"}, "/"), &user, acme.RSA2048)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Force to use DNSimple
-	provider, err := acme.NewDNSProviderDNSimple(dnsimpleEmail, dnsimpleApiKey)
+	provider, err := dnsimple.NewDNSProviderCredentials(dnsimpleEmail, dnsimpleApiKey)
 	if err != nil {
 		log.Fatal(err)
 	}
