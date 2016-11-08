@@ -139,7 +139,7 @@ func main() {
 
 	// The acme library takes care of completing the challenges to obtain the certificate(s).
 	bundle := true
-	certificates, failures := client.ObtainCertificate(domains, bundle, nil)
+	certificates, failures := client.ObtainCertificate(domains, bundle, nil, false)
 	if len(failures) > 0 {
 		log.Fatal(failures)
 	}
