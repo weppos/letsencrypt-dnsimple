@@ -41,7 +41,7 @@ func (u User) GetPrivateKey() crypto.PrivateKey {
 }
 
 var (
-	dnsimpleEmail  string
+	certOut  string
 	dnsimpleApiKey string
 	acmeUrl        string
 	email          string
@@ -58,8 +58,8 @@ func usage() {
 }
 
 func init() {
-	flag.StringVar(&dnsimpleEmail, "user", "", "DNSimple user email")
-	flag.StringVar(&dnsimpleApiKey, "api-key", "", "DNSimple API key")
+	flag.StringVar(&certOut, "out", "", "Certificates output path")
+	flag.StringVar(&dnsimpleApiKey, "api-key", "", "DNSimple APIv2 account token")
 	flag.StringVar(&acmeUrl, "url", "https://acme-staging.api.letsencrypt.org/", "The CA URL")
 	flag.StringVar(&email, "email", "", "Email used for registration and recovery contact")
 	flag.StringVar(&dataPath, "path", ".data", "Directory to use for storing the data")
@@ -78,6 +78,12 @@ func main() {
 	}
 
 	now := time.Now().Unix()
+	// ?
+	if r, _ := regexp.Compile("%v"); r.MatchString(email) {
+		// ?
+		email = fmt.Sprintf(email, now)
+	}
+
 	domains := strings.Split(flag.Args()[0], ",")
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
@@ -85,9 +91,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if r, _ := regexp.Compile("%v"); r.MatchString(email) {
-		email = fmt.Sprintf(email, now)
-	}
 	user := User{
 		Email: email,
 		key:   privateKey,
@@ -109,13 +112,13 @@ func main() {
 	}
 
 	// Force to use DNSimple
-	provider, err := dnsimple.NewDNSProviderCredentials(dnsimpleEmail, dnsimpleApiKey)
+	provider, err := dnsimple.NewDNSProviderCredentials(dnsimpleApiKey, "")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	client.ExcludeChallenges([]acme.Challenge{acme.HTTP01, acme.TLSSNI01})
-	client.SetChallengeProvider(acme.DNS01, provider)
+	err = client.SetChallengeProvider(acme.DNS01, provider)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,8 +153,13 @@ func main() {
 	// Each certificate comes back with the cert bytes, the bytes of the client's
 	// private key, and a certificate URL. This is where you should save them to files!
 	//fmt.Printf("%#v\n", certificates)
+	var certsPath string
+	if certOut == "" {
+		certsPath = fmt.Sprintf("%v/certs/%v", dataPath, now)
+	} else {
+		certsPath = certOut
+	}
 
-	certsPath := fmt.Sprintf("%v/certs/%v", dataPath, now)
 	log.Println(certsPath)
 	fileWrite(certsPath, "privkey.pem", certificates.PrivateKey)
 	fileWrite(certsPath, "fullchain.pem", certificates.Certificate)
